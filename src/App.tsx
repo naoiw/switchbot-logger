@@ -39,6 +39,7 @@ function App() {
               <th style={thStyle}>タイムスタンプ</th>
               <th style={thStyle}>温度(℃)</th>
               <th style={thStyle}>湿度(%)</th>
+              <th style={thStyle}>不快指数</th>
               <th style={thStyle}>CO2(ppm)</th>
             </tr>
           </thead>
@@ -51,6 +52,11 @@ function App() {
                 </td>
                 <td style={tdStyle}>
                   {row.humidity != null ? row.humidity : "—"}
+                </td>
+                <td style={tdStyle}>
+                  {row.discomfortIndex != null
+                    ? row.discomfortIndex.toFixed(1)
+                    : "—"}
                 </td>
                 <td style={tdStyle}>{row.co2 != null ? row.co2 : "—"}</td>
               </tr>

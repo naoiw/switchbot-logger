@@ -8,6 +8,16 @@ export interface LogRow {
   temperature: number | null;
   humidity: number | null;
   co2: number | null;
+  /** 不快指数: 0.81×気温 + 0.01×湿度×(0.99×気温 - 14.3) + 46.3（気温・湿度どちらか欠損時は null） */
+  discomfortIndex: number | null;
+}
+
+/**
+ * 不快指数を計算する。
+ * 式: 0.81 × 気温 + 0.01 × 湿度 × (0.99 × 気温 - 14.3) + 46.3
+ */
+function calcDiscomfortIndex(temperature: number, humidity: number): number {
+  return 0.81 * temperature + 0.01 * humidity * (0.99 * temperature - 14.3) + 46.3;
 }
 
 /** gviz のセル（値は .v） */
@@ -45,11 +55,17 @@ export async function fetchLogData(): Promise<LogRow[]> {
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     const cells = row?.c ?? [];
+    const temperature = getCellNumber(cells[1]);
+    const humidity = getCellNumber(cells[2]);
     result.push({
       timestamp: getCellString(cells[0]),
-      temperature: getCellNumber(cells[1]),
-      humidity: getCellNumber(cells[2]),
+      temperature,
+      humidity,
       co2: getCellNumber(cells[3]),
+      discomfortIndex:
+        temperature != null && humidity != null
+          ? calcDiscomfortIndex(temperature, humidity)
+          : null,
     });
   }
   return result;
