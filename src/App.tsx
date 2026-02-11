@@ -12,7 +12,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeRangeLabel, setTimeRangeLabel] =
-    useState<TimeRangeKey>("1週間");
+    useState<TimeRangeKey>("1日");
 
   useEffect(() => {
     let cancelled = false;
@@ -34,7 +34,7 @@ function App() {
   }, []);
 
   const rangeCount = useMemo(
-    () => TIME_RANGES.find((r) => r.label === timeRangeLabel)?.count ?? TIME_RANGES[3].count,
+    () => TIME_RANGES.find((r) => r.label === timeRangeLabel)?.count ?? TIME_RANGES[2].count,
     [timeRangeLabel]
   );
   const filteredRows = useMemo(
