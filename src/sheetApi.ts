@@ -32,11 +32,22 @@ function getCellNumber(c: GvizCell | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function getCellString(c: GvizCell | null | undefined): string {
+/**
+ * タイムスタンプ用セルを文字列に変換する。
+ * - 数値または数字文字列（UNIX秒 or ミリ秒）の場合は ISO 日付文字列に変換
+ * - それ以外（"2026/02/11" 等の既存形式）はそのまま返す
+ */
+function getCellTimestamp(c: GvizCell | null | undefined): string {
   if (c == null) return "";
-  const raw = c.f ?? c.v;
+  const raw = c.v ?? c.f;
   if (raw == null || raw === "") return "";
-  return String(raw);
+  const num = Number(raw);
+  // UNIX秒（10桁）またはミリ秒（13桁）とみなして ISO に変換
+  if (Number.isFinite(num) && num >= 1e9 && num < 1e15) {
+    const ms = num < 1e12 ? num * 1000 : num;
+    return new Date(ms).toISOString();
+  }
+  return String(c.f ?? c.v);
 }
 
 /**
@@ -58,7 +69,7 @@ export async function fetchLogData(): Promise<LogRow[]> {
     const temperature = getCellNumber(cells[1]);
     const humidity = getCellNumber(cells[2]);
     result.push({
-      timestamp: getCellString(cells[0]),
+      timestamp: getCellTimestamp(cells[0]),
       temperature,
       humidity,
       co2: getCellNumber(cells[3]),
