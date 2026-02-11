@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { LogRow } from "./sheetApi";
+import { parseTimestamp } from "./timeRange";
 
 /** 縦軸の補助線（横線）の本数（全グラフで統一） */
 const Y_TICK_COUNT = 5;
@@ -51,6 +52,12 @@ export function ChartCard({
     const isEmptyString = typeof v === "string" && v === "";
     const num = v != null && !isEmptyString ? Number(v) : null;
     return { ...row, [dataKey]: num };
+  });
+  // 古い→新しいの順にし、グラフで最新が右側になるようにする
+  chartData.sort((a, b) => {
+    const ta = parseTimestamp(a.timestamp)?.getTime() ?? Infinity;
+    const tb = parseTimestamp(b.timestamp)?.getTime() ?? Infinity;
+    return ta - tb;
   });
   const values = chartData
     .map((d) => d[dataKey])
