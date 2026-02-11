@@ -10,7 +10,7 @@ sequenceDiagram
   participant GAS as Apps Script
   participant Sheet as スプレッドシート log
   participant Front as フロント Web
-  API->>GAS: 温湿度・CO2 取得（5分間隔）
+  GAS->>API: 温湿度・CO2 取得（5分間隔）
   GAS->>Sheet: 追記（約1週間分保持）
   Front->>Sheet: gviz JSON で取得
   Front->>Front: グラフ表示
