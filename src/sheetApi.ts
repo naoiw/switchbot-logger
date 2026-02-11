@@ -52,7 +52,7 @@ function getCellTimestamp(c: GvizCell | null | undefined): string {
 
 /**
  * スプレッドシートからデータを取得し、LogRow の配列に変換する。
- * 2行目～1009行目を想定（1行目はヘッダのためスキップ）。空セルは null。
+ * 5分間隔で1週間分を想定（1行目はヘッダのためスキップ、2行目～最大約2017行目）。空セルは null。
  */
 export async function fetchLogData(): Promise<LogRow[]> {
   const res = await fetch(SHEET_URL);

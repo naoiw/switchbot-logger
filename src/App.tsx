@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchLogData, type LogRow } from "./sheetApi";
 import {
   TIME_RANGES,
-  filterRowsByRange,
+  filterRowsByCount,
   type TimeRangeKey,
 } from "./timeRange";
 import { ChartCard } from "./ChartCard";
@@ -33,13 +33,13 @@ function App() {
     };
   }, []);
 
-  const rangeMs = useMemo(
-    () => TIME_RANGES.find((r) => r.label === timeRangeLabel)?.ms ?? TIME_RANGES[3].ms,
+  const rangeCount = useMemo(
+    () => TIME_RANGES.find((r) => r.label === timeRangeLabel)?.count ?? TIME_RANGES[3].count,
     [timeRangeLabel]
   );
   const filteredRows = useMemo(
-    () => filterRowsByRange(rows, rangeMs),
-    [rows, rangeMs]
+    () => filterRowsByCount(rows, rangeCount),
+    [rows, rangeCount]
   );
 
   if (loading) return <p>読み込み中…</p>;
@@ -54,9 +54,9 @@ function App() {
         <span style={{ alignSelf: "center", marginRight: "0.25rem" }}>
           横軸:
         </span>
-        {TIME_RANGES.map(({ label, ms }) => (
+        {TIME_RANGES.map(({ label }) => (
           <button
-            key={ms}
+            key={label}
             type="button"
             onClick={() => setTimeRangeLabel(label)}
             style={{

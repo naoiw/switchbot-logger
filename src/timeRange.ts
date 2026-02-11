@@ -1,9 +1,9 @@
-/** 横軸の範囲オプション（ミリ秒） */
+/** 横軸の範囲オプション（表示するデータ件数は5分間隔を想定） */
 export const TIME_RANGES = [
-  { label: "1時間", ms: 60 * 60 * 1000 },
-  { label: "12時間", ms: 12 * 60 * 60 * 1000 },
-  { label: "1日", ms: 24 * 60 * 60 * 1000 },
-  { label: "1週間", ms: 7 * 24 * 60 * 60 * 1000 },
+  { label: "1時間", count: 12 },
+  { label: "12時間", count: 144 },
+  { label: "1日", count: 288 },
+  { label: "1週間", count: 2016 },
 ] as const;
 
 export type TimeRangeKey = (typeof TIME_RANGES)[number]["label"];
@@ -32,22 +32,17 @@ export function parseTimestamp(ts: string): Date | null {
 }
 
 /**
- * 指定範囲（現在時刻基準で過去 ms ミリ秒）に含まれる行だけに絞る。
+ * タイムスタンプで昇順ソートし、最新の count 件だけに絞る。
  * タイムスタンプがパースできない行は除外する。
  */
-export function filterRowsByRange<T extends { timestamp: string }>(
+export function filterRowsByCount<T extends { timestamp: string }>(
   rows: T[],
-  rangeMs: number
+  count: number
 ): T[] {
   const withDate = rows
     .map((row) => ({ row, date: parseTimestamp(row.timestamp) }))
     .filter((x): x is { row: T; date: Date } => x.date != null);
   if (withDate.length === 0) return [];
-  const maxDate = new Date(
-    Math.max(...withDate.map((x) => x.date.getTime()))
-  );
-  const minTime = maxDate.getTime() - rangeMs;
-  return withDate
-    .filter((x) => x.date.getTime() >= minTime)
-    .map((x) => x.row);
+  withDate.sort((a, b) => a.date.getTime() - b.date.getTime());
+  return withDate.slice(-count).map((x) => x.row);
 }
