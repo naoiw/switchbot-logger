@@ -47,7 +47,7 @@ function App() {
 
   return (
     <div style={{ padding: "1rem", fontFamily: "sans-serif", maxWidth: 900 }}>
-      <h1>スイッチボット ログ</h1>
+      <h1>SwitchBot CO2センサー（温湿度計） データログ</h1>
       <p>取得件数: {rows.length} 件（表示: {filteredRows.length} 件）</p>
 
       <div style={{ marginBottom: "1rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
