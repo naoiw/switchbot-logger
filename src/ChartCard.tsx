@@ -48,7 +48,8 @@ export function ChartCard({
   // スプレッドシート由来で数値が文字列になっている場合があるため Number で統一（null はそのまま）
   const chartData = data.map((row) => {
     const v = row[dataKey];
-    const num = v != null && v !== "" ? Number(v) : null;
+    const isEmptyString = typeof v === "string" && v === "";
+    const num = v != null && !isEmptyString ? Number(v) : null;
     return { ...row, [dataKey]: num };
   });
   const values = chartData
