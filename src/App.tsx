@@ -55,6 +55,19 @@ function App() {
   );
   const latestRow = useMemo(() => getLatestRow(rows), [rows]);
 
+  /** 過去24時間（288件）の最高・最低気温 */
+  const last24hRows = useMemo(() => filterRowsByCount(rows, 288), [rows]);
+  const last24hTempStats = useMemo(() => {
+    const temps = last24hRows
+      .map((r) => r.temperature)
+      .filter((t): t is number => t != null && Number.isFinite(t));
+    if (temps.length === 0) return { max: null, min: null };
+    return {
+      max: Math.max(...temps),
+      min: Math.min(...temps),
+    };
+  }, [last24hRows]);
+
   if (loading) return <p>読み込み中…</p>;
   if (error) return <p>エラー: {error}</p>;
 
@@ -114,6 +127,46 @@ function App() {
               <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>CO2濃度</span>
               <div style={{ fontSize: "1.25rem", fontWeight: 600, color: "#27ae60" }}>
                 {formatValue(latestRow.co2, "ppm")}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {last24hRows.length > 0 && (
+        <section
+          style={{
+            marginBottom: "1.5rem",
+            padding: "1rem 1.25rem",
+            background: "#f8f9fa",
+            borderRadius: 8,
+            border: "1px solid #e9ecef",
+          }}
+        >
+          <h2 style={{ margin: "0 0 0.75rem", fontSize: "0.95rem", color: "#495057" }}>
+            過去24時間の気温
+          </h2>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+              gap: "1rem",
+            }}
+          >
+            <div>
+              <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>最高気温</span>
+              <div style={{ fontSize: "1.25rem", fontWeight: 600, color: "#c0392b" }}>
+                {last24hTempStats.max != null
+                  ? formatValue(last24hTempStats.max, "℃")
+                  : "—"}
+              </div>
+            </div>
+            <div>
+              <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>最低気温</span>
+              <div style={{ fontSize: "1.25rem", fontWeight: 600, color: "#2980b9" }}>
+                {last24hTempStats.min != null
+                  ? formatValue(last24hTempStats.min, "℃")
+                  : "—"}
               </div>
             </div>
           </div>
