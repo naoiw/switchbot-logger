@@ -76,6 +76,19 @@ function App() {
       ? unit ? `${v.toFixed(1)} ${unit}` : v.toFixed(1)
       : "—";
 
+  /** 不快指数に応じた顔文字（横に表示用） */
+  const getDiscomfortEmoji = (value: number | null): string => {
+    if (value == null || !Number.isFinite(value)) return "";
+    if (value <= 55) return "🥶🥶";
+    if (value < 60) return "🥶";
+    if (value < 65) return "😐";
+    if (value < 70) return "😄";
+    if (value < 75) return "😐";
+    if (value < 80) return "😓";
+    if (value < 85) return "🥵";
+    return "🥵🥵";
+  };
+
   return (
     <div style={{ padding: "1rem", fontFamily: "sans-serif", maxWidth: 900 }}>
       <h1>SwitchBot CO2センサー（温湿度計） データログ</h1>
@@ -119,8 +132,20 @@ function App() {
             </div>
             <div>
               <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>不快指数</span>
-              <div style={{ fontSize: "1.25rem", fontWeight: 600, color: "#9b59b6" }}>
+              <div
+                style={{
+                  fontSize: "1.25rem",
+                  fontWeight: 600,
+                  color: "#9b59b6",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.35rem",
+                }}
+              >
                 {formatValue(latestRow.discomfortIndex, "")}
+                <span style={{ fontSize: "1.1rem" }} aria-hidden>
+                  {getDiscomfortEmoji(latestRow.discomfortIndex)}
+                </span>
               </div>
             </div>
             <div>
