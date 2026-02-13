@@ -89,6 +89,15 @@ function App() {
     return "🥵🥵";
   };
 
+  /** CO2濃度に応じた絵文字（横に表示用） */
+  const getCo2Emoji = (value: number | null): string => {
+    if (value == null || !Number.isFinite(value)) return "";
+    if (value <= 600) return "😊";
+    if (value <= 800) return "😐";
+    if (value <= 1000) return "⚠️";
+    return "🚨";
+  };
+
   return (
     <div style={{ padding: "1rem", fontFamily: "sans-serif", maxWidth: 900 }}>
       <h1>SwitchBot CO2センサー（温湿度計） データログ</h1>
@@ -150,8 +159,20 @@ function App() {
             </div>
             <div>
               <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>CO2濃度</span>
-              <div style={{ fontSize: "1.25rem", fontWeight: 600, color: "#27ae60" }}>
+              <div
+                style={{
+                  fontSize: "1.25rem",
+                  fontWeight: 600,
+                  color: "#27ae60",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.35rem",
+                }}
+              >
                 {formatValue(latestRow.co2, "ppm")}
+                <span style={{ fontSize: "1.1rem" }} aria-hidden>
+                  {getCo2Emoji(latestRow.co2)}
+                </span>
               </div>
             </div>
           </div>
