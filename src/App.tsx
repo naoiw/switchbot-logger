@@ -3,9 +3,21 @@ import { fetchLogData, type LogRow } from "./sheetApi";
 import {
   TIME_RANGES,
   filterRowsByCount,
+  parseTimestamp,
   type TimeRangeKey,
 } from "./timeRange";
 import { ChartCard } from "./ChartCard";
+
+/** 最新1件の行を取得（タイムスタンプが最も新しい行） */
+function getLatestRow(rows: LogRow[]): LogRow | null {
+  if (rows.length === 0) return null;
+  const withDate = rows
+    .map((row) => ({ row, date: parseTimestamp(row.timestamp) }))
+    .filter((x): x is { row: LogRow; date: Date } => x.date != null);
+  if (withDate.length === 0) return null;
+  withDate.sort((a, b) => a.date.getTime() - b.date.getTime());
+  return withDate[withDate.length - 1].row;
+}
 
 function App() {
   const [rows, setRows] = useState<LogRow[]>([]);
@@ -41,13 +53,73 @@ function App() {
     () => filterRowsByCount(rows, rangeCount),
     [rows, rangeCount]
   );
+  const latestRow = useMemo(() => getLatestRow(rows), [rows]);
 
   if (loading) return <p>読み込み中…</p>;
   if (error) return <p>エラー: {error}</p>;
 
+  const formatValue = (v: number | null, unit: string) =>
+    v != null && Number.isFinite(v)
+      ? unit ? `${v.toFixed(1)} ${unit}` : v.toFixed(1)
+      : "—";
+
   return (
     <div style={{ padding: "1rem", fontFamily: "sans-serif", maxWidth: 900 }}>
       <h1>SwitchBot CO2センサー（温湿度計） データログ</h1>
+
+      {latestRow && (
+        <section
+          style={{
+            marginBottom: "1.5rem",
+            padding: "1rem 1.25rem",
+            background: "#f8f9fa",
+            borderRadius: 8,
+            border: "1px solid #e9ecef",
+          }}
+        >
+          <h2 style={{ margin: "0 0 0.75rem", fontSize: "0.95rem", color: "#495057" }}>
+            現在の値
+            {latestRow.timestamp && (
+              <span style={{ fontWeight: 400, marginLeft: "0.5rem" }}>
+                （{parseTimestamp(latestRow.timestamp)?.toLocaleString("ja-JP") ?? latestRow.timestamp}）
+              </span>
+            )}
+          </h2>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+              gap: "1rem",
+            }}
+          >
+            <div>
+              <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>温度</span>
+              <div style={{ fontSize: "1.25rem", fontWeight: 600, color: "#e74c3c" }}>
+                {formatValue(latestRow.temperature, "℃")}
+              </div>
+            </div>
+            <div>
+              <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>湿度</span>
+              <div style={{ fontSize: "1.25rem", fontWeight: 600, color: "#3498db" }}>
+                {formatValue(latestRow.humidity, "%")}
+              </div>
+            </div>
+            <div>
+              <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>不快指数</span>
+              <div style={{ fontSize: "1.25rem", fontWeight: 600, color: "#9b59b6" }}>
+                {formatValue(latestRow.discomfortIndex, "")}
+              </div>
+            </div>
+            <div>
+              <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>CO2濃度</span>
+              <div style={{ fontSize: "1.25rem", fontWeight: 600, color: "#27ae60" }}>
+                {formatValue(latestRow.co2, "ppm")}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       <p>取得件数: {rows.length} 件（表示: {filteredRows.length} 件）</p>
 
       <div style={{ marginBottom: "1rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
