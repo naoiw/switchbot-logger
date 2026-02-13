@@ -15,9 +15,11 @@ export interface LogRow {
 /**
  * 不快指数を計算する。
  * 式: 0.81 × 気温 + 0.01 × 湿度 × (0.99 × 気温 - 14.3) + 46.3
+ * 有効数字は小数点第1位まで（四捨五入）。
  */
 function calcDiscomfortIndex(temperature: number, humidity: number): number {
-  return 0.81 * temperature + 0.01 * humidity * (0.99 * temperature - 14.3) + 46.3;
+  const value = 0.81 * temperature + 0.01 * humidity * (0.99 * temperature - 14.3) + 46.3;
+  return Math.round(value * 10) / 10;
 }
 
 /** gviz のセル（値は .v） */
