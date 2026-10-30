@@ -1,12 +1,15 @@
 {
   "name": "switchbot-logger",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "SwitchBot environment dashboard powered by Google Sheets",
   "type": "module",
+  "packageManager": "pnpm@9.14.2",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "tsc --target es2020 --module commonjs --moduleResolution node --strict --skipLibCheck --rootDir src --outDir tests/dist src/timeRange.ts src/metrics.ts && node --test tests/*.test.cjs"
   },
   "dependencies": {
     "react": "^18.3.1",
