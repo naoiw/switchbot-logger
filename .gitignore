@@ -1,4 +1,22 @@
-node_modules
-dist
+# Dependencies and build outputs
+node_modules/
+dist/
+tests/dist/
+*.tsbuildinfo
+
+# Local config and credentials
+.env
+.env.local
+.env.*.local
 *.local
+
+# Editors and OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.cursor/
 .DS_Store
+Thumbs.db
+
+# Logs
+*.log

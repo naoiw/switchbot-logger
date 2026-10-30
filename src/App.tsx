@@ -1,279 +1,179 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchLogData, type LogRow } from "./sheetApi";
-import {
-  TIME_RANGES,
-  filterRowsByCount,
-  parseTimestamp,
-  type TimeRangeKey,
-} from "./timeRange";
 import { ChartCard } from "./ChartCard";
+import { METRICS, formatMetric, getLatestRow, getStatusLabel, getTemperatureStats } from "./metrics";
+import { fetchLogData, type LogRow } from "./sheetApi";
+import { TIME_RANGES, filterRowsByCount, parseTimestamp, type TimeRangeKey } from "./timeRange";
 
-/** 最新1件の行を取得（タイムスタンプが最も新しい行） */
-function getLatestRow(rows: LogRow[]): LogRow | null {
-  if (rows.length === 0) return null;
-  const withDate = rows
-    .map((row) => ({ row, date: parseTimestamp(row.timestamp) }))
-    .filter((x): x is { row: LogRow; date: Date } => x.date != null);
-  if (withDate.length === 0) return null;
-  withDate.sort((a, b) => a.date.getTime() - b.date.getTime());
-  return withDate[withDate.length - 1].row;
+const CHART_COLORS: Record<string, string> = {
+  temperature: "#ff9e87",
+  humidity: "#72bcff",
+  discomfortIndex: "#c8a9ff",
+  co2: "#6ddbb9",
+};
+
+function formatTimestamp(timestamp: string): string {
+  const parsed = parseTimestamp(timestamp);
+  return parsed
+    ? parsed.toLocaleString("ja-JP", { year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })
+    : timestamp;
 }
 
-function App() {
+export default function App() {
   const [rows, setRows] = useState<LogRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [timeRangeLabel, setTimeRangeLabel] =
-    useState<TimeRangeKey>("1日");
+  const [retryKey, setRetryKey] = useState(0);
+  const [timeRange, setTimeRange] = useState<TimeRangeKey>("1日");
+  const [lastFetchedAt, setLastFetchedAt] = useState<Date | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    setIsLoading(true);
     setError(null);
     fetchLogData()
       .then((data) => {
-        if (!cancelled) setRows(data);
+        if (cancelled) return;
+        setRows(data);
+        setLastFetchedAt(new Date());
       })
-      .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      .catch((cause: unknown) => {
+        if (!cancelled) setError(cause instanceof Error ? cause.message : String(cause));
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setIsLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    return () => { cancelled = true; };
+  }, [retryKey]);
 
-  const rangeCount = useMemo(
-    () => TIME_RANGES.find((r) => r.label === timeRangeLabel)?.count ?? TIME_RANGES[2].count,
-    [timeRangeLabel]
-  );
-  const filteredRows = useMemo(
-    () => filterRowsByCount(rows, rangeCount),
-    [rows, rangeCount]
-  );
-  const latestRow = useMemo(() => getLatestRow(rows), [rows]);
-
-  /** 過去24時間（288件）の最高・最低気温 */
-  const last24hRows = useMemo(() => filterRowsByCount(rows, 288), [rows]);
-  const last24hTempStats = useMemo(() => {
-    const temps = last24hRows
-      .map((r) => r.temperature)
-      .filter((t): t is number => t != null && Number.isFinite(t));
-    if (temps.length === 0) return { max: null, min: null };
-    return {
-      max: Math.max(...temps),
-      min: Math.min(...temps),
-    };
-  }, [last24hRows]);
-
-  if (loading) return <p>読み込み中…</p>;
-  if (error) return <p>エラー: {error}</p>;
-
-  const formatValue = (v: number | null, unit: string) =>
-    v != null && Number.isFinite(v)
-      ? unit ? `${v.toFixed(1)} ${unit}` : v.toFixed(1)
-      : "—";
-
-  /** 不快指数に応じた顔文字（横に表示用） */
-  const getDiscomfortEmoji = (value: number | null): string => {
-    if (value == null || !Number.isFinite(value)) return "";
-    if (value <= 55) return "🥶🥶";
-    if (value < 60) return "🥶";
-    if (value < 65) return "😐";
-    if (value < 70) return "😄";
-    if (value < 75) return "😐";
-    if (value < 80) return "😓";
-    if (value < 85) return "🥵";
-    return "🥵🥵";
-  };
-
-  /** CO2濃度に応じた絵文字（横に表示用） */
-  const getCo2Emoji = (value: number | null): string => {
-    if (value == null || !Number.isFinite(value)) return "";
-    if (value <= 600) return "😊";
-    if (value <= 800) return "😐";
-    if (value <= 1000) return "⚠️";
-    return "🚨";
-  };
+  const selectedCount = TIME_RANGES.find((range) => range.label === timeRange)?.count ?? 288;
+  const visibleRows = useMemo(() => filterRowsByCount(rows, selectedCount), [rows, selectedCount]);
+  const latest = useMemo(() => getLatestRow(rows), [rows]);
+  const temperatureStats = useMemo(() => getTemperatureStats(rows), [rows]);
+  const refresh = () => setRetryKey((key) => key + 1);
 
   return (
-    <div style={{ padding: "1rem", fontFamily: "sans-serif", maxWidth: 900 }}>
-      <h1>SwitchBot CO2センサー（温湿度計） データログ</h1>
+    <div className="site-shell">
+      <div className="ambient ambient--left" aria-hidden="true" />
+      <div className="ambient ambient--right" aria-hidden="true" />
+      <main className="dashboard">
+        <header className="page-header">
+          <div className="brand">
+            <div className="brand__mark" aria-hidden="true"><span /><span /><span /></div>
+            <span>SWITCHBOT <strong>LOGGER</strong></span>
+          </div>
+          <div className="header-actions">
+            <span className="header-actions__caption">ENVIRONMENT MONITOR</span>
+            <button className="refresh-button" type="button" onClick={refresh} disabled={isLoading}>
+              <span aria-hidden="true">↻</span> {isLoading ? "更新中…" : "データを更新"}
+            </button>
+          </div>
+        </header>
 
-      {latestRow && (
-        <section
-          style={{
-            marginBottom: "1.5rem",
-            padding: "1rem 1.25rem",
-            background: "#f8f9fa",
-            borderRadius: 8,
-            border: "1px solid #e9ecef",
-          }}
-        >
-          <h2 style={{ margin: "0 0 0.75rem", fontSize: "0.95rem", color: "#495057" }}>
-            現在の値
-            {latestRow.timestamp && (
-              <span style={{ fontWeight: 400, marginLeft: "0.5rem" }}>
-                （{parseTimestamp(latestRow.timestamp)?.toLocaleString("ja-JP") ?? latestRow.timestamp}）
-              </span>
-            )}
-          </h2>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-              gap: "1rem",
-            }}
-          >
-            <div>
-              <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>温度</span>
-              <div style={{ fontSize: "1.25rem", fontWeight: 600, color: "#e74c3c" }}>
-                {formatValue(latestRow.temperature, "℃")}
-              </div>
-            </div>
-            <div>
-              <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>湿度</span>
-              <div style={{ fontSize: "1.25rem", fontWeight: 600, color: "#3498db" }}>
-                {formatValue(latestRow.humidity, "%")}
-              </div>
-            </div>
-            <div>
-              <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>不快指数</span>
-              <div
-                style={{
-                  fontSize: "1.25rem",
-                  fontWeight: 600,
-                  color: "#9b59b6",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.35rem",
-                }}
-              >
-                {formatValue(latestRow.discomfortIndex, "")}
-                <span style={{ fontSize: "1.1rem" }} aria-hidden>
-                  {getDiscomfortEmoji(latestRow.discomfortIndex)}
-                </span>
-              </div>
-            </div>
-            <div>
-              <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>CO2濃度</span>
-              <div
-                style={{
-                  fontSize: "1.25rem",
-                  fontWeight: 600,
-                  color: "#27ae60",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.35rem",
-                }}
-              >
-                {formatValue(latestRow.co2, "ppm")}
-                <span style={{ fontSize: "1.1rem" }} aria-hidden>
-                  {getCo2Emoji(latestRow.co2)}
-                </span>
-              </div>
-            </div>
+        <section className="hero" aria-labelledby="page-title">
+          <div>
+            <p className="eyebrow hero__eyebrow"><span className="status-dot" /> ROOM CLIMATE OVERVIEW</p>
+            <h1 id="page-title">室内環境ダッシュボード</h1>
+            <p className="hero__description">温度・湿度・不快指数・CO₂濃度を、ひとつの画面で。</p>
+          </div>
+          <div className="hero__aside">
+            <span className="eyebrow">LATEST MEASUREMENT</span>
+            <strong>{latest ? formatTimestamp(latest.timestamp) : "—"}</strong>
+            <span className="hero__hint">センサーの最終記録時刻</span>
           </div>
         </section>
-      )}
 
-      {last24hRows.length > 0 && (
-        <section
-          style={{
-            marginBottom: "1.5rem",
-            padding: "1rem 1.25rem",
-            background: "#f8f9fa",
-            borderRadius: 8,
-            border: "1px solid #e9ecef",
-          }}
-        >
-          <h2 style={{ margin: "0 0 0.75rem", fontSize: "0.95rem", color: "#495057" }}>
-            過去24時間の気温
-          </h2>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-              gap: "1rem",
-            }}
-          >
+        {error && (
+          <div className="notice notice--error" role="alert">
+            <div><strong>データを取得できませんでした</strong><p>通信環境やスプレッドシートの共有設定をご確認ください。詳細: {error}</p></div>
+            <button type="button" onClick={refresh}>再試行</button>
+          </div>
+        )}
+
+        <section className="overview" aria-labelledby="overview-title">
+          <div className="section-heading">
             <div>
-              <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>最高気温</span>
-              <div style={{ fontSize: "1.25rem", fontWeight: 600, color: "#c0392b" }}>
-                {last24hTempStats.max != null
-                  ? formatValue(last24hTempStats.max, "℃")
-                  : "—"}
-              </div>
+              <p className="eyebrow">LIVE SNAPSHOT</p>
+              <h2 id="overview-title">最新の計測値</h2>
             </div>
-            <div>
-              <span style={{ fontSize: "0.8rem", color: "#6c757d" }}>最低気温</span>
-              <div style={{ fontSize: "1.25rem", fontWeight: 600, color: "#2980b9" }}>
-                {last24hTempStats.min != null
-                  ? formatValue(last24hTempStats.min, "℃")
-                  : "—"}
-              </div>
-            </div>
+            <span className="section-heading__meta">5分間隔で記録されるデータを表示</span>
+          </div>
+          <div className="metric-grid">
+            {METRICS.map((metric) => {
+              const value = latest?.[metric.key] ?? null;
+              const status = getStatusLabel(metric.key, value);
+              return (
+                <article className="metric-card" key={metric.key} data-tone={metric.tone}>
+                  <div className="metric-card__top">
+                    <span className="metric-card__label">{metric.label}</span>
+                    <span className="metric-card__icon" aria-hidden="true">{metric.icon}</span>
+                  </div>
+                  <div className="metric-card__reading">
+                    <strong>{formatMetric(value, metric.unit)}</strong>
+                    {metric.unit && <span>{metric.unit}</span>}
+                  </div>
+                  <div className="metric-card__bottom">
+                    <span className="metric-card__rule" aria-hidden="true" />
+                    <span>{status ?? (value == null ? "データなし" : "最新の記録")}</span>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
-      )}
 
-      <p>取得件数: {rows.length} 件（表示: {filteredRows.length} 件）</p>
+        <section className="summary-strip" aria-label="最近の気温">
+          <div className="summary-strip__title">
+            <span aria-hidden="true">↗</span>
+            <div><strong>直近の気温</strong><small>5分間隔の直近288件（約24時間）</small></div>
+          </div>
+          <div className="summary-strip__stats">
+            <div><span>最高</span><strong>{formatMetric(temperatureStats.max, "°C")} <small>°C</small></strong></div>
+            <div><span>最低</span><strong>{formatMetric(temperatureStats.min, "°C")} <small>°C</small></strong></div>
+          </div>
+        </section>
 
-      <div style={{ marginBottom: "1rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-        <span style={{ alignSelf: "center", marginRight: "0.25rem" }}>
-          横軸:
-        </span>
-        {TIME_RANGES.map(({ label }) => (
-          <button
-            key={label}
-            type="button"
-            onClick={() => setTimeRangeLabel(label)}
-            style={{
-              padding: "0.35rem 0.75rem",
-              cursor: "pointer",
-              border: timeRangeLabel === label ? "2px solid #333" : "1px solid #ccc",
-              borderRadius: 4,
-              background: timeRangeLabel === label ? "#f0f0f0" : "#fff",
-              fontWeight: timeRangeLabel === label ? 600 : 400,
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+        <section className="trends" aria-labelledby="trends-title">
+          <div className="section-heading section-heading--trends">
+            <div>
+              <p className="eyebrow">HISTORICAL DATA</p>
+              <h2 id="trends-title">計測データの推移</h2>
+              <p className="section-heading__meta">取得 {rows.length.toLocaleString("ja-JP")} 件 / 表示 {visibleRows.length.toLocaleString("ja-JP")} 件</p>
+            </div>
+            <div className="range-picker" role="group" aria-label="表示期間">
+              {TIME_RANGES.map((range) => (
+                <button
+                  type="button"
+                  key={range.label}
+                  className={timeRange === range.label ? "range-picker__button is-active" : "range-picker__button"}
+                  onClick={() => setTimeRange(range.label)}
+                  aria-pressed={timeRange === range.label}
+                >
+                  {range.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="chart-grid">
+            {METRICS.map((metric) => (
+              <ChartCard
+                key={metric.key}
+                title={metric.label}
+                dataKey={metric.key}
+                unit={metric.unit}
+                data={visibleRows}
+                tone={metric.tone}
+                color={CHART_COLORS[metric.key]}
+              />
+            ))}
+          </div>
+          <p className="chart-footnote">表示期間は5分ごとに記録されたデータ件数から換算しています。欠測がある場合、実際の経過時間と異なります。</p>
+        </section>
 
-      <ChartCard
-        title="温度"
-        unit="℃"
-        dataKey="temperature"
-        data={filteredRows}
-        color="#e74c3c"
-      />
-      <ChartCard
-        title="湿度"
-        unit="%"
-        dataKey="humidity"
-        data={filteredRows}
-        color="#3498db"
-      />
-      <ChartCard
-        title="不快指数"
-        unit="—"
-        dataKey="discomfortIndex"
-        data={filteredRows}
-        color="#9b59b6"
-      />
-      <ChartCard
-        title="CO2"
-        unit="ppm"
-        dataKey="co2"
-        data={filteredRows}
-        color="#27ae60"
-      />
+        <footer className="page-footer">
+          <span>SwitchBot Logger · Google Sheets / Apps Script</span>
+          <span>{lastFetchedAt ? "最終取得: " + lastFetchedAt.toLocaleTimeString("ja-JP") : isLoading ? "データ取得中…" : "未取得"}</span>
+        </footer>
+      </main>
     </div>
   );
 }
-
-export default App;
