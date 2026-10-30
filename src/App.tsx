@@ -49,7 +49,7 @@ export default function App() {
   const visibleRows = useMemo(() => filterRowsByCount(rows, selectedCount), [rows, selectedCount]);
   const latest = useMemo(() => getLatestRow(rows), [rows]);
   const temperatureStats = useMemo(() => getTemperatureStats(rows), [rows]);
-  const refresh = () => setRetryKey((key) => key + 1);
+  const retry = () => setRetryKey((key) => key + 1);
 
   return (
     <div className="site-shell">
@@ -61,12 +61,7 @@ export default function App() {
             <div className="brand__mark" aria-hidden="true"><span /><span /><span /></div>
             <span>SWITCHBOT <strong>LOGGER</strong></span>
           </div>
-          <div className="header-actions">
-            <span className="header-actions__caption">ENVIRONMENT MONITOR</span>
-            <button className="refresh-button" type="button" onClick={refresh} disabled={isLoading}>
-              <span aria-hidden="true">↻</span> {isLoading ? "更新中…" : "データを更新"}
-            </button>
-          </div>
+          <span className="header-caption">ENVIRONMENT MONITOR</span>
         </header>
 
         <section className="hero" aria-labelledby="page-title">
@@ -85,7 +80,7 @@ export default function App() {
         {error && (
           <div className="notice notice--error" role="alert">
             <div><strong>データを取得できませんでした</strong><p>通信環境やスプレッドシートの共有設定をご確認ください。詳細: {error}</p></div>
-            <button type="button" onClick={refresh}>再試行</button>
+            <button type="button" onClick={retry}>再試行</button>
           </div>
         )}
 
