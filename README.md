@@ -1,48 +1,67 @@
-# switchbot-logger
+# SwitchBot Logger
 
-[SwitchBot CO2センサー（温湿度計）](https://www.switchbot.jp/products/switchbot-co2-meter) のデータを Google スプレッドシート経由で取得し、Web でグラフ表示するアプリです。部屋の温度・湿度・不快指数・CO2 を折れ線グラフで確認できます。
-
-## アーキテクチャ
-
-```mermaid
-sequenceDiagram
-  participant API as SwitchBot API
-  participant GAS as Apps Script
-  participant Sheet as スプレッドシート log
-  participant Front as フロント Web
-  GAS->>API: 温湿度・CO2 取得（5分間隔）
-  GAS->>Sheet: 追記（約1週間分保持）
-  Front->>Sheet: gviz JSON で取得
-  Front->>Front: グラフ表示
-```
-
-- Apps Script が 5 分間隔で SwitchBot API から温湿度・CO2 を取得し、スプレッドシートの `log` シートに追記する（約 1 週間分を保持）。
-- フロントはそのシートを gviz（JSON）で取得し、React でグラフを表示する。
+SwitchBot CO₂センサー（温湿度計）の記録をブラウザで確認する、室内環境ダッシュボードです。Google Apps Scriptで計測値をスプレッドシートに蓄積し、Reactで最新値と時系列グラフを表示します。
 
 ## 主な機能
 
-- **折れ線グラフ**: 温度・湿度・不快指数・CO2 の 4 種類を表示
-- **表示範囲**: 1 時間 / 12 時間 / 1 日 / 1 週間で切り替え可能
+- **最新値** — 温度、湿度、不快指数、CO₂濃度をカードで一覧表示
+- **時系列グラフ** — 1時間 / 12時間 / 1日 / 1週間の表示切り替え
+- **気温の振り返り** — 直近288件（5分間隔で約24時間）の最高・最低値
+- **操作性** — PC・スマートフォン向けのレスポンシブ表示、手動のデータ再取得、取得失敗時の再試行
+
+## 公開先
+
+| 環境 | ブランチ | URL |
+| --- | --- | --- |
+| 本番 | `main` | https://naoiw.github.io/switchbot-logger/ |
+| 開発プレビュー | `develop` | https://naoiw.github.io/switchbot-logger/develop/ |
+
+本番と開発プレビューは**1つの GitHub Pages サイト**にまとめて公開します。新しい運用はワークフローを `main` に取り込んだ後に有効になります。
 
 ## 技術スタック
 
-- React 18, Recharts, Vite, TypeScript
+- **TypeScript / React 18 / Recharts** — ダッシュボードと折れ線グラフ
+- **CSS / Vite** — スタイル・開発・ビルド
+- **Google Apps Script / Google Sheets** — センサーデータの収集・保存と公開用読み取り
+- **Node.js 20 / pnpm 9** — ローカル開発・テスト・ビルド
+- **GitHub Actions / GitHub Pages** — 検証と公開
 
-## ローカルで動かす
-
-```bash
-pnpm install
-pnpm dev
-```
-
-## ビルド・デプロイ
+## ローカル開発
 
 ```bash
-pnpm build
+corepack enable
+pnpm install --frozen-lockfile
+pnpm dev      # 開発サーバー
+pnpm test     # 集計・期間選択の回帰テスト
+pnpm build    # 型チェック＋本番ビルド
 ```
 
-- `main` ブランチへ push すると、GitHub Actions でビルドされ GitHub Pages に自動デプロイされます。
+`pnpm dev` でViteの開発サーバーを起動します。現状のデータ取得先は `src/sheetApi.ts` の `SPREADSHEET_ID` に指定されたスプレッドシートです。自分のシートを使う場合は、IDと読み取り権限を確認してください。
 
-## データの記録（GAS）
+**注意:** ブラウザから Google Sheets の gviz エンドポイントを直接読み取る構成です。計測データとシートIDは閲覧者に見えるため、非公開データや認証情報を置かないでください。SwitchBotのAPIトークン等はGAS側だけで扱います。
 
-スプレッドシートへの記録は Google Apps Script で行います。設定・トリガー・シート形式などは [apps_script/README.md](apps_script/README.md) を参照してください。
+## ブランチ運用
+
+1. 実装は `develop` で行い、`main` は本番専用にします。
+2. `develop` へのpushでテスト・ビルドし、成功した版を開発プレビューに公開します。
+3. `main` への反映は **`develop` → `main` のPull Request** で行います。PRでは検証のみ行い、公開しません。
+4. マージ後も `develop` は残し、`main` と同期して使います。
+
+## ディレクトリ構成
+
+- `src/` — Reactの画面・グラフ、スタイル、集計ロジック、スプレッドシート連携
+- `apps_script/` — 5分ごとにSwitchBot APIからデータを取得するGAS
+- `tests/` — 集計・日時処理の自動テスト
+- `.github/workflows/` — CIとPagesデプロイ
+- `docs/` — 詳細仕様、開発手順、デプロイ構成
+
+## ドキュメント
+
+- [画面・データ仕様](docs/SPEC.md)
+- [開発手順](docs/DEVELOPMENT.md)
+- [デプロイ構成](docs/DEPLOYMENT.md)
+- [Apps Scriptの設定・運用](apps_script/README.md)
+
+## ライセンス
+
+[MIT License](LICENSE)

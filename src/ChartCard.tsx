@@ -44,7 +44,7 @@ interface ChartCardProps {
 export function ChartCard({ title, unit, dataKey, data, color, tone }: ChartCardProps) {
   const chartData = useMemo(() => data.map((row) => {
     const raw = row[dataKey];
-    const numeric = raw == null || raw === "" ? null : Number(raw);
+    const numeric = raw == null ? null : Number(raw);
     return { ...row, [dataKey]: numeric != null && Number.isFinite(numeric) ? numeric : null };
   }), [data, dataKey]);
 
