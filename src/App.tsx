@@ -24,7 +24,6 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
   const [timeRange, setTimeRange] = useState<TimeRangeKey>("1日");
-  const [lastFetchedAt, setLastFetchedAt] = useState<Date | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,7 +33,6 @@ export default function App() {
       .then((data) => {
         if (cancelled) return;
         setRows(data);
-        setLastFetchedAt(new Date());
       })
       .catch((cause: unknown) => {
         if (!cancelled) setError(cause instanceof Error ? cause.message : String(cause));
@@ -164,10 +162,7 @@ export default function App() {
         </section>
 
         <footer className="page-footer">
-          <div className="footer-meta">
-            <span>SwitchBot Logger · Google Sheets / Apps Script</span>
-            <span>{lastFetchedAt ? "最終取得: " + lastFetchedAt.toLocaleTimeString("ja-JP") : isLoading ? "データ取得中…" : "未取得"}</span>
-          </div>
+          <span>SwitchBot Logger · Google Sheets / Apps Script</span>
           <a href="https://github.com/naoiw/switchbot-logger" target="_blank" rel="noopener noreferrer" aria-label="GitHubでソースコードを開く">GitHub ↗</a>
         </footer>
       </main>
