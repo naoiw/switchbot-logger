@@ -14,7 +14,7 @@ const CHART_COLORS: Record<string, string> = {
 function formatTimestamp(timestamp: string): string {
   const parsed = parseTimestamp(timestamp);
   return parsed
-    ? parsed.toLocaleString("ja-JP", { year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })
+    ? parsed.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })
     : timestamp;
 }
 
@@ -62,10 +62,10 @@ export default function App() {
             <p className="eyebrow hero__eyebrow"><span className="status-dot" /> ROOM CLIMATE OVERVIEW</p>
             <h1 id="page-title">室内環境ダッシュボード</h1>
           </div>
-          <div className="hero__aside">
-            <span className="eyebrow">LATEST MEASUREMENT</span>
-            <strong>{latest ? formatTimestamp(latest.timestamp) : "—"}</strong>
-            <span className="hero__hint">センサーの最終記録時刻</span>
+          <div className="data-timestamp" aria-label="センサーの最終記録">
+            <span className="data-timestamp__label">LATEST DATA</span>
+            <strong className="data-timestamp__value">{latest ? formatTimestamp(latest.timestamp) : "—"}</strong>
+            <span className="data-timestamp__detail">センサーの最終記録時刻</span>
           </div>
         </section>
 
