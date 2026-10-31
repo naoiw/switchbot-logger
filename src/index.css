@@ -25,12 +25,12 @@ button:focus-visible { outline: 2px solid #76c9ff; outline-offset: 3px; }
 .ambient { position: absolute; width: 440px; height: 440px; pointer-events: none; filter: blur(100px); opacity: .16; border-radius: 50%; }
 .ambient--left { top: 50px; left: -240px; background: #4a7bb2; }
 .ambient--right { top: 180px; right: -300px; background: #377a92; }
-.dashboard { position: relative; max-width: var(--chrome-width); margin: 0 auto; padding: 0 var(--chrome-gutter) 32px; }
+.dashboard { position: relative; max-width: var(--chrome-width); margin: 0 auto; padding: 0 var(--chrome-gutter); }
 .page-header, .brand, .section-heading, .metric-card__top, .metric-card__bottom, .chart-card__header, .summary-strip, .summary-strip__title, .summary-strip__stats, .page-footer { display: flex; align-items: center; }
 .page-header { justify-content: space-between; min-height: var(--chrome-header-height); border-bottom: 1px solid #243145; }
 .brand { gap: 11px; font-size: var(--chrome-brand-size); font-weight: 800; letter-spacing: .02em; color: #9babc5; white-space: nowrap; }
 .brand strong { color: #f6f8ff; font-weight: 800; }
-.brand__mark { display: flex; align-items: flex-end; justify-content: center; gap: 3px; width: 36px; height: 36px; padding: 8px; border-radius: 10px; background: #203a52; }
+.brand__mark { display: flex; align-items: flex-end; justify-content: center; gap: 2px; width: 36px; height: 36px; padding: 8px; border-radius: 10px; background: #203a52; }
 .brand__mark span { display: block; width: 5px; height: 8px; background: #81c9fb; border-radius: 3px; }
 .brand__mark span:nth-child(2) { height: 15px; background: #8ee0bc; }
 .brand__mark span:nth-child(3) { height: 11px; }
@@ -110,7 +110,7 @@ h1, h2, h3, p { margin-top: 0; }
   .hero { align-items: flex-start; }
 }
 @media (max-width: 700px) {
-  .dashboard { padding: 0 var(--chrome-gutter) 24px; }
+  .dashboard { padding: 0 var(--chrome-gutter); }
   .header-caption { display: none; }
   .hero { flex-direction: column; gap: 20px; padding-top: 10px; padding-bottom: 30px; }
   .hero__aside { padding: 12px 15px; border: 1px solid #27354a; border-radius: 12px; width: 100%; }
