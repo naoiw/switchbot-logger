@@ -176,7 +176,7 @@ test("legacy descending sheet: migrate all four columns together, then append", 
   const { state, run } = setup({ existingRows: rows });
   run();
   assert.equal(state.sorts.length, 1);
-  assert.deepEqual(state.sorts[0], {
+  assert.deepEqual(JSON.parse(JSON.stringify(state.sorts[0])), {
     row: 2, col: 1, numRows: 4, numCols: 4,
     sortOptions: { column: 1, ascending: true },
   });
