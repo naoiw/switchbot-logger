@@ -68,7 +68,6 @@ export default function App() {
           <div>
             <p className="eyebrow hero__eyebrow"><span className="status-dot" /> ROOM CLIMATE OVERVIEW</p>
             <h1 id="page-title">室内環境ダッシュボード</h1>
-            <p className="hero__description">温度・湿度・不快指数・CO₂濃度を、ひとつの画面で。</p>
           </div>
           <div className="hero__aside">
             <span className="eyebrow">LATEST MEASUREMENT</span>
