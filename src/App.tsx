@@ -165,8 +165,11 @@ export default function App() {
         </section>
 
         <footer className="page-footer">
-          <span>SwitchBot Logger · Google Sheets / Apps Script</span>
-          <span>{lastFetchedAt ? "最終取得: " + lastFetchedAt.toLocaleTimeString("ja-JP") : isLoading ? "データ取得中…" : "未取得"}</span>
+          <div className="footer-meta">
+            <span>SwitchBot Logger · Google Sheets / Apps Script</span>
+            <span>{lastFetchedAt ? "最終取得: " + lastFetchedAt.toLocaleTimeString("ja-JP") : isLoading ? "データ取得中…" : "未取得"}</span>
+          </div>
+          <a href="https://github.com/naoiw/switchbot-logger" target="_blank" rel="noopener noreferrer" aria-label="GitHubでソースコードを開く">GitHub ↗</a>
         </footer>
       </main>
     </div>
