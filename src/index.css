@@ -97,7 +97,6 @@ h1, h2, h3, p { margin-top: 0; }
 .chart-empty { height: 265px; display: grid; place-items: center; color: #91a5bf; font-size: .88rem; }
 .chart-footnote { font-size: .73rem; color: #8495ad; margin: 16px 0 34px; line-height: 1.7; }
 .page-footer { justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 28px 0 32px; border-top: 1px solid #243145; color: #7f90a8; font-size: var(--chrome-footer-size); font-weight: 500; letter-spacing: .02em; }
-.footer-meta { display: flex; flex: 1; min-width: 0; flex-wrap: wrap; gap: 8px 20px; }
 .page-footer a { color: #a3b7d0; text-decoration: none; white-space: nowrap; margin-left: auto; }
 .page-footer a:hover { text-decoration: underline; }
 .notice { margin-bottom: 25px; padding: 16px 20px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
@@ -131,7 +130,6 @@ h1, h2, h3, p { margin-top: 0; }
   .chart-card__header { padding-left: 8px; }
   .chart-card__plot, .chart-empty { height: 240px; }
   .page-footer { align-items: flex-start; flex-direction: row; }
-  .footer-meta { flex-direction: column; }
 }
 @media (max-width: 370px) {
   .metric-card { padding: 13px; }
