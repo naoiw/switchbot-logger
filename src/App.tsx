@@ -14,33 +14,26 @@ const CHART_COLORS: Record<string, string> = {
 function formatTimestamp(timestamp: string): string {
   const parsed = parseTimestamp(timestamp);
   return parsed
-    ? parsed.toLocaleString("ja-JP", { year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })
+    ? parsed.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })
     : timestamp;
 }
 
 export default function App() {
   const [rows, setRows] = useState<LogRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
   const [timeRange, setTimeRange] = useState<TimeRangeKey>("1日");
-  const [lastFetchedAt, setLastFetchedAt] = useState<Date | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setIsLoading(true);
     setError(null);
     fetchLogData()
       .then((data) => {
         if (cancelled) return;
         setRows(data);
-        setLastFetchedAt(new Date());
       })
       .catch((cause: unknown) => {
         if (!cancelled) setError(cause instanceof Error ? cause.message : String(cause));
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
       });
     return () => { cancelled = true; };
   }, [retryKey]);
@@ -69,10 +62,10 @@ export default function App() {
             <p className="eyebrow hero__eyebrow"><span className="status-dot" /> ROOM CLIMATE OVERVIEW</p>
             <h1 id="page-title">室内環境ダッシュボード</h1>
           </div>
-          <div className="hero__aside">
-            <span className="eyebrow">LATEST MEASUREMENT</span>
-            <strong>{latest ? formatTimestamp(latest.timestamp) : "—"}</strong>
-            <span className="hero__hint">センサーの最終記録時刻</span>
+          <div className="data-timestamp" aria-label="センサーの最終記録">
+            <span className="data-timestamp__label">LATEST DATA</span>
+            <strong className="data-timestamp__value">{latest ? formatTimestamp(latest.timestamp) : "—"}</strong>
+            <span className="data-timestamp__detail">センサーの最終記録時刻</span>
           </div>
         </section>
 
@@ -164,10 +157,7 @@ export default function App() {
         </section>
 
         <footer className="page-footer">
-          <div className="footer-meta">
-            <span>SwitchBot Logger · Google Sheets / Apps Script</span>
-            <span>{lastFetchedAt ? "最終取得: " + lastFetchedAt.toLocaleTimeString("ja-JP") : isLoading ? "データ取得中…" : "未取得"}</span>
-          </div>
+          <span>SWITCHBOT LOGGER</span>
           <a href="https://github.com/naoiw/switchbot-logger" target="_blank" rel="noopener noreferrer" aria-label="GitHubでソースコードを開く">GitHub ↗</a>
         </footer>
       </main>
