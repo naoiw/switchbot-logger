@@ -20,14 +20,12 @@ function formatTimestamp(timestamp: string): string {
 
 export default function App() {
   const [rows, setRows] = useState<LogRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
   const [timeRange, setTimeRange] = useState<TimeRangeKey>("1日");
 
   useEffect(() => {
     let cancelled = false;
-    setIsLoading(true);
     setError(null);
     fetchLogData()
       .then((data) => {
@@ -37,9 +35,7 @@ export default function App() {
       .catch((cause: unknown) => {
         if (!cancelled) setError(cause instanceof Error ? cause.message : String(cause));
       })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
+;
     return () => { cancelled = true; };
   }, [retryKey]);
 
