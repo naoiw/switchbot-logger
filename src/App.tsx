@@ -34,8 +34,7 @@ export default function App() {
       })
       .catch((cause: unknown) => {
         if (!cancelled) setError(cause instanceof Error ? cause.message : String(cause));
-      })
-;
+      });
     return () => { cancelled = true; };
   }, [retryKey]);
 
