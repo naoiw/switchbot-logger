@@ -2,7 +2,7 @@
  * SwitchBot CO₂センサーの計測値を、スプレッドシートの log シートに記録する。
  * トリガーは Apps Script の管理画面から5分間隔で設定する。
  *
- * シートの形式・並び順（新しいデータを2行目に挿入）・最大2016件は従来どおり。
+ * 最大2016件と列構成は従来どおり。記録は古い順へ移行し、末尾に追記する。
  */
 const LOG_SHEET_NAME = "log";
 const LOG_HEADERS = ["timestamp", "temperature", "humidity", "co2"];
@@ -18,7 +18,6 @@ function recordEnvironment() {
   try {
     // API取得中はロックを保持しない。失敗したデータをシートに書き込まない。
     const measurement = fetchCurrentEnv();
-    const timestampSeconds = Math.floor(Date.now() / 1000);
 
     const lock = LockService.getScriptLock();
     if (!lock.tryLock(WRITE_LOCK_TIMEOUT_MS)) {
@@ -38,19 +37,24 @@ function recordEnvironment() {
         sheet.appendRow(LOG_HEADERS);
       }
 
-      // 最新を上に配置。フロントエンドと既存のシート形式を変更しない。
-      sheet.insertRowBefore(HEADER_ROWS + 1);
-      sheet.getRange(HEADER_ROWS + 1, 1, 1, LOG_HEADERS.length).setValues([[
+      // 旧データ（最新が2行目）を初回のみ昇順へ並べ替える。
+      // 判定・移行・追記・削除は同じロック内で実行する。
+      migrateLegacyLogOrder(sheet);
+
+      // 取得時刻ではなく書き込み直前の時刻を採用し、並び順を保つ。
+      const timestampSeconds = Math.floor(Date.now() / 1000);
+      sheet.appendRow([
         timestampSeconds,
         measurement.temperature,
         measurement.humidity,
         measurement.co2,
-      ]]);
+      ]);
 
       const maxRows = HEADER_ROWS + MAX_LOG_ENTRIES;
       const overflow = sheet.getLastRow() - maxRows;
       if (overflow > 0) {
-        sheet.deleteRows(maxRows + 1, overflow);
+        // 古いデータはヘッダー直下にある。最新行は末尾に残す。
+        sheet.deleteRows(HEADER_ROWS + 1, overflow);
       }
 
       // ロックを解放する前にスプレッドシートへの変更を確定する。
@@ -63,6 +67,55 @@ function recordEnvironment() {
     console.error("環境ログの記録に失敗: " + error.message);
     throw error;
   }
+}
+
+/**
+ * 旧方式（新しいデータが2行目）のログを一度だけ時刻昇順に並べ替える。
+ *
+ * 通常時は先頭と末尾のタイムスタンプ2セルのみ確認する。
+ * 逆順の場合のみ全件を検証してからRange.sort()を使い、A～D列を行単位で
+ * 並べ替える。既に昇順、データ0～1件の場合は書き換えない。
+ * 日時不正・新旧混在など判断できない場合はデータを変更せずに停止する。
+ */
+function migrateLegacyLogOrder(sheet) {
+  const lastRow = sheet.getLastRow();
+  const count = lastRow - HEADER_ROWS;
+  if (count < 2) return;
+
+  const firstTimestamp = parseLogTimestamp(sheet.getRange(2, 1).getValue());
+  const lastTimestamp = parseLogTimestamp(sheet.getRange(lastRow, 1).getValue());
+
+  if (firstTimestamp <= lastTimestamp) return;
+
+  const range = sheet.getRange(2, 1, count, LOG_HEADERS.length);
+  const rows = range.getValues();
+  let previousTimestamp = Infinity;
+
+  for (const row of rows) {
+    const timestamp = parseLogTimestamp(row[0]);
+    if (timestamp > previousTimestamp) {
+      throw new Error("既存ログの順序が混在しています。バックアップ後に手動で確認してください");
+    }
+    previousTimestamp = timestamp;
+  }
+
+  range.sort({ column: 1, ascending: true });
+  console.info("旧ログを時刻昇順に移行しました: " + count + "件");
+}
+
+/** 保存形式はUNIX秒。未解釈の文字列や日時セルを自動的に並び替えない。 */
+function parseLogTimestamp(value) {
+  if (
+    typeof value !== "number" && typeof value !== "string" ||
+    String(value).trim() === ""
+  ) {
+    throw new Error("既存ログのタイムスタンプが不正です");
+  }
+  const timestamp = Number(value);
+  if (!Number.isFinite(timestamp) || timestamp < 1e9 || timestamp >= 1e12) {
+    throw new Error("既存ログのタイムスタンプがUNIX秒ではありません");
+  }
+  return timestamp;
 }
 
 /**

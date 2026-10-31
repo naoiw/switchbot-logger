@@ -50,7 +50,7 @@ pnpm build    # 型チェック＋本番ビルド
 ## ディレクトリ構成
 
 - `src/` — Reactの画面・グラフ、スタイル、集計ロジック、スプレッドシート連携
-- `apps_script/` — 5分ごとにSwitchBot APIからデータを取得するGAS
+- `apps_script/` — 5分ごとにSwitchBot APIからデータを取得し、時刻昇順で末尾に追記するGAS（旧ログの自動移行あり）
 - `tests/` — 集計・日時処理の自動テスト
 - `.github/workflows/` — CIとPagesデプロイ
 - `docs/` — 詳細仕様、開発手順、デプロイ構成
