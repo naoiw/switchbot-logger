@@ -2,7 +2,7 @@
  * SwitchBot CO₂センサーの計測値を、スプレッドシートの log シートに記録する。
  * トリガーは Apps Script の管理画面から5分間隔で設定する。
  *
- * シートの形式・並び順（新しいデータを2行目に挿入）・最大2016件は従来どおり。
+ * 古い順に末尾へ追記し、最大2016件を保持する。
  */
 const LOG_SHEET_NAME = "log";
 const LOG_HEADERS = ["timestamp", "temperature", "humidity", "co2"];
@@ -18,7 +18,6 @@ function recordEnvironment() {
   try {
     // API取得中はロックを保持しない。失敗したデータをシートに書き込まない。
     const measurement = fetchCurrentEnv();
-    const timestampSeconds = Math.floor(Date.now() / 1000);
 
     const lock = LockService.getScriptLock();
     if (!lock.tryLock(WRITE_LOCK_TIMEOUT_MS)) {
@@ -38,19 +37,20 @@ function recordEnvironment() {
         sheet.appendRow(LOG_HEADERS);
       }
 
-      // 最新を上に配置。フロントエンドと既存のシート形式を変更しない。
-      sheet.insertRowBefore(HEADER_ROWS + 1);
-      sheet.getRange(HEADER_ROWS + 1, 1, 1, LOG_HEADERS.length).setValues([[
+      // 取得時刻ではなく書き込み直前の時刻を採用し、並び順を保つ。
+      const timestampSeconds = Math.floor(Date.now() / 1000);
+      sheet.appendRow([
         timestampSeconds,
         measurement.temperature,
         measurement.humidity,
         measurement.co2,
-      ]]);
+      ]);
 
       const maxRows = HEADER_ROWS + MAX_LOG_ENTRIES;
       const overflow = sheet.getLastRow() - maxRows;
       if (overflow > 0) {
-        sheet.deleteRows(maxRows + 1, overflow);
+        // 古いデータはヘッダー直下にある。最新行は末尾に残す。
+        sheet.deleteRows(HEADER_ROWS + 1, overflow);
       }
 
       // ロックを解放する前にスプレッドシートへの変更を確定する。
