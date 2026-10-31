@@ -157,7 +157,7 @@ export default function App() {
         </section>
 
         <footer className="page-footer">
-          <span>SwitchBot Logger · Google Sheets / Apps Script</span>
+          <span>SWITCHBOT LOGGER</span>
           <a href="https://github.com/naoiw/switchbot-logger" target="_blank" rel="noopener noreferrer" aria-label="GitHubでソースコードを開く">GitHub ↗</a>
         </footer>
       </main>
