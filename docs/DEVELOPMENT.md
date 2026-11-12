@@ -2,10 +2,10 @@
 
 ## 動作環境
 
-Node.js 20 / pnpm 9を使用します。`.nvmrc` と `package.json` の `packageManager` を参照してください。
+Node.js 26 / pnpm 9を使用します。`.nvmrc` と `package.json` の `packageManager` を参照してください。
 
 ```bash
-corepack enable
+npm install --global pnpm@9.14.2
 pnpm install --frozen-lockfile
 pnpm dev
 pnpm test
