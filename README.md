@@ -23,13 +23,13 @@ SwitchBot CO₂センサー（温湿度計）の記録をブラウザで確認�
 - **TypeScript / React 18 / Recharts** — ダッシュボードと折れ線グラフ
 - **CSS / Vite** — スタイル・開発・ビルド
 - **Google Apps Script / Google Sheets** — センサーデータの収集・保存と公開用読み取り
-- **Node.js 20 / pnpm 9** — ローカル開発・テスト・ビルド
+- **Node.js 26 / pnpm 9** — ローカル開発・テスト・ビルド
 - **GitHub Actions / GitHub Pages** — 検証と公開
 
 ## ローカル開発
 
 ```bash
-corepack enable
+npm install --global pnpm@9.14.2
 pnpm install --frozen-lockfile
 pnpm dev      # 開発サーバー
 pnpm test     # 集計・期間選択の回帰テスト
