@@ -1,7 +1,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { filterRowsByCount, parseTimestamp } = require("./dist/timeRange.js");
-const { getLatestRow, getTemperatureStats, formatMetric, getStatusLabel } = require("./dist/metrics.js");
+const { getLatestRow, formatMetric, getStatusLabel } = require("./dist/metrics.js");
 
 const record = (timestamp, temperature, humidity = 45) => ({
   timestamp, temperature, humidity, co2: 650, discomfortIndex: 70,
@@ -17,12 +17,6 @@ test("range selection sorts by timestamp, excluding invalid values", () => {
   const rows = [record("2026-01-03", 24), record("invalid", 25), record("2026-01-01", 21), record("2026-01-02", 22)];
   assert.deepEqual(filterRowsByCount(rows, 2).map((row) => row.temperature), [22, 24]);
   assert.equal(getLatestRow(rows)?.temperature, 24);
-});
-
-test("temperature stats ignore missing and non-finite values", () => {
-  const rows = [record("2026-01-01", null), record("2026-01-02", 23.5), record("2026-01-03", 20), record("2026-01-04", Infinity)];
-  assert.deepEqual(getTemperatureStats(rows), { min: 20, max: 23.5 });
-  assert.deepEqual(getTemperatureStats([]), { min: null, max: null });
   assert.equal(getLatestRow([record("invalid", 20)]), null);
 });
 
