@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChartCard } from "./ChartCard";
-import { METRICS, formatMetric, getLatestRow, getStatusLabel, getTemperatureStats } from "./metrics";
+import { METRICS, formatMetric, getLatestRow, getStatusLabel } from "./metrics";
 import { fetchLogData, type LogRow } from "./sheetApi";
 import { TIME_RANGES, filterRowsByCount, parseTimestamp, type TimeRangeKey } from "./timeRange";
 
@@ -41,7 +41,6 @@ export default function App() {
   const selectedCount = TIME_RANGES.find((range) => range.label === timeRange)?.count ?? 288;
   const visibleRows = useMemo(() => filterRowsByCount(rows, selectedCount), [rows, selectedCount]);
   const latest = useMemo(() => getLatestRow(rows), [rows]);
-  const temperatureStats = useMemo(() => getTemperatureStats(rows), [rows]);
   const retry = () => setRetryKey((key) => key + 1);
 
   return (
@@ -105,17 +104,6 @@ export default function App() {
                 </article>
               );
             })}
-          </div>
-        </section>
-
-        <section className="summary-strip" aria-label="最近の気温">
-          <div className="summary-strip__title">
-            <span aria-hidden="true">↗</span>
-            <div><strong>直近の気温</strong><small>5分間隔の直近288件（約24時間）</small></div>
-          </div>
-          <div className="summary-strip__stats">
-            <div><span>最高</span><strong>{formatMetric(temperatureStats.max, "°C")} <small>°C</small></strong></div>
-            <div><span>最低</span><strong>{formatMetric(temperatureStats.min, "°C")} <small>°C</small></strong></div>
           </div>
         </section>
 

@@ -1,5 +1,5 @@
 import type { LogRow } from "./sheetApi";
-import { filterRowsByCount, parseTimestamp } from "./timeRange";
+import { parseTimestamp } from "./timeRange";
 
 export type MetricKey = "temperature" | "humidity" | "discomfortIndex" | "co2";
 
@@ -27,15 +27,6 @@ export function getLatestRow(rows: LogRow[]): LogRow | null {
     }
   }
   return latest;
-}
-
-export function getTemperatureStats(rows: LogRow[]): { min: number | null; max: number | null } {
-  // 5分間隔の計測を前提にした直近288件（約24時間）。
-  const temperatures = filterRowsByCount(rows, 288)
-    .map((row) => row.temperature)
-    .filter((value): value is number => value != null && Number.isFinite(value));
-  if (temperatures.length === 0) return { min: null, max: null };
-  return { min: Math.min(...temperatures), max: Math.max(...temperatures) };
 }
 
 export function formatMetric(value: number | null, unit = ""): string {
